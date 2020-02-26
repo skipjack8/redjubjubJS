@@ -34,3 +34,4 @@ bincode = "1"
 [features]
 nightly = []
 default = ["serde"]
+frost = []
