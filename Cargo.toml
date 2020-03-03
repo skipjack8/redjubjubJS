@@ -30,8 +30,14 @@ rand_chacha = "0.2"
 proptest = "0.9"
 lazy_static = "1.4"
 bincode = "1"
+tokio = { version = "0.2", features = ["full"] }
+futures = "0.3"
 
 [features]
 nightly = []
 default = ["serde"]
 frost = []
+
+[[test]]
+name = "frost"
+required-features = ["frost"]
