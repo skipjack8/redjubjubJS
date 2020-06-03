@@ -14,18 +14,23 @@ categories = ["cryptography", "zcash"]
 keywords = ["cryptography", "crypto", "jubjub", "redjubjub", "zcash"]
 description = "A mostly-standalone implementation of the RedJubjub signature scheme."
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [package.metadata.docs.rs]
 features = ["nightly"]
 
 [dependencies]
+hex = "0.4"
 rand_core = "0.5"
 thiserror = "1.0"
 blake2b_simd = "0.5"
 jubjub = "0.3"
 serde = { version = "1", optional = true, features = ["derive"] }
+rand = { version = "0.7", features = ["wasm-bindgen"] }
+wasm-bindgen = {version = "^0.2", features = ["nightly"]}
 
 [dev-dependencies]
-rand = "0.7"
 rand_chacha = "0.2"
 proptest = "0.9"
 lazy_static = "1.4"
@@ -34,3 +39,7 @@ bincode = "1"
 [features]
 nightly = []
 default = ["serde"]
+
+[profile.release]
+lto = true
+opt-level = 's'
