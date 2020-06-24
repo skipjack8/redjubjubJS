@@ -5,6 +5,8 @@
 extern crate hex;
 extern crate rand;
 extern crate wasm_bindgen;
+#[macro_use]
+extern crate serde_derive;
 
 use std::convert::TryFrom;
 
@@ -16,6 +18,9 @@ use hash::HStar;
 pub use public_key::{PublicKey, PublicKeyBytes};
 pub use secret_key::SecretKey;
 pub use signature::Signature;
+pub use keys::*;
+use rand_core::RngCore;
+
 
 mod constants;
 mod error;
@@ -23,6 +28,8 @@ mod hash;
 mod public_key;
 mod secret_key;
 mod signature;
+mod keys;
+mod group_hash;
 
 /// An element of the JubJub scalar field used for randomization of public and secret keys.
 pub type Randomizer = jubjub::Fr;
@@ -83,7 +90,11 @@ pub(crate) mod private {
 
 fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SecretKey<SpendAuth>, Error> {
     let mut alpha_bytes = [0u8;32];
-    hex::decode_to_slice(alpha_string, &mut alpha_bytes).expect("Parse error!");
+
+    match hex::decode_to_slice(alpha_string, &mut alpha_bytes) {
+        Ok(()) => (),
+        Err(_) => return Err(Error::MalformedSecretKey),
+    };
     let maybe_alpha = Scalar::from_bytes(&alpha_bytes);
     let alpha_scalar = {
         if maybe_alpha.is_some().into() {
@@ -94,7 +105,10 @@ fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SecretKey<Spend
     };
 
     let mut ask_bytes = [0u8;32];
-    hex::decode_to_slice(ask_string, &mut ask_bytes).expect("Parse error!");
+    match hex::decode_to_slice(ask_string, &mut ask_bytes) {
+        Ok(()) => (),
+        Err(_) => return Err(Error::MalformedSecretKey),
+    };
     let sk = SecretKey::<SpendAuth>::try_from(ask_bytes);
     if sk.is_ok() {
         Ok(sk.unwrap().randomize(&alpha_scalar))
@@ -103,8 +117,7 @@ fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SecretKey<Spend
     }
 }
 
-//@TODO delete later
-// rsk --> rk
+// ask + alpha --> rk
 #[wasm_bindgen]
 pub fn generate_rk_from_ask(ask_string: String, alpha_string: String) -> String {
 
@@ -140,7 +153,7 @@ pub fn generate_spend_auth_sig(ask_string: String, alpha_string: String, message
     };
     let sig = sk.sign(thread_rng(), message_hash.as_ref());
 
-// Types can be converted to raw byte arrays using From/Into
+    // Types can be converted to raw byte arrays using From/Into
     let r_str = hex::encode(sig.r_bytes);
     let s_str = hex::encode(sig.s_bytes);
 
@@ -287,9 +300,205 @@ pub fn verify_binding_sig(pk_string: String, message_hash_string: String, signat
 
 #[test]
 fn verify_binding_test() {
-    let sig = String::from("26fc82e2c90c322107fbb22e542097e0eabfe7ec006722583a1289f7e80ea0c633c606b026d9f73803bf5a2b744457a10b2709c5a6c6a257bf54db557ebc590c");
+    let sig = String::from("dcc5a3cdd3ad2a1a70258a265c38d56ceba9c4c3bedcb0f80de8fae4f505e3080060908a2e2372c883072439b403b9acdca78daa5094633cc75e82e05007320b");
     let msg = String::from("0102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f00");
     let pk = String::from("8b6a0b38b9faae3c3b803b47b0f146ad50ab221e6e2afbe6dbde45cba9d381ed");
 
     assert!(verify_binding_sig(pk, msg, sig));
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct KeyList {
+    pub sk: String,
+    pub ask: String,
+    pub nsk: String,
+    pub ovk: String,
+    pub ak: String,
+    pub nk: String,
+    pub ivk: String,
+    pub d: String,
+    pub pk_d: String,
+    pub payment_address: String,
+}
+
+#[wasm_bindgen]
+pub fn generate_keys() -> JsValue {
+    let mut rng = thread_rng();
+
+    let mut all_keys = KeyList {
+        sk: "".to_string(),
+        ask: "".to_string(),
+        nsk: "".to_string(),
+        ovk: "".to_string(),
+        ak: "".to_string(),
+        nk: "".to_string(),
+        ivk: "".to_string(),
+        d: "".to_string(),
+        pk_d: "".to_string(),
+        payment_address: "".to_string()
+    };
+    loop {
+        let mut sk_bytes = [0u8; 32];
+        rng.fill_bytes(&mut sk_bytes);
+        all_keys.sk = hex::encode(sk_bytes);
+
+        let expsk = ExpandedSpendingKey::from_spending_key(&sk_bytes);
+        all_keys.ask = hex::encode(expsk.ask.to_bytes());
+        all_keys.nsk = hex::encode(expsk.nsk.to_bytes());
+        all_keys.ovk = hex::encode(expsk.ovk.0);
+
+        let full_viewing_key = FullViewingKey::from_expanded_spending_key(&expsk);
+        all_keys.ak = hex::encode(full_viewing_key.vk.ak.to_bytes());
+        all_keys.nk = hex::encode(full_viewing_key.vk.nk.to_bytes());
+
+        let viewing_key = full_viewing_key.vk;
+
+        let ivk = viewing_key.ivk();
+        if ivk.is_some() {
+            all_keys.ivk = hex::encode(ivk.unwrap().to_bytes());
+
+            loop {
+                let mut d_bytes = [0u8; 11];
+                rng.fill_bytes(&mut d_bytes);
+
+                let diversify = Diversifier(d_bytes);
+                let payment_address = diversify.to_payment_address(ivk.unwrap());
+
+                if payment_address.is_some() {
+                    let address = payment_address.unwrap();
+                    all_keys.d = hex::encode(d_bytes);
+                    all_keys.pk_d = hex::encode(address.pk_d().to_bytes());
+                    all_keys.payment_address = address.encode_payment_address();
+                    break;
+                }
+            }
+            break;
+        }
+    }
+
+    JsValue::from_serde(&all_keys).unwrap_or(JsValue::NULL)
+}
+
+#[wasm_bindgen]
+pub fn generate_keys_by_sk(sk_str: String) -> JsValue {
+    let mut rng = thread_rng();
+
+    let mut all_keys = KeyList {
+        sk: "".to_string(),
+        ask: "".to_string(),
+        nsk: "".to_string(),
+        ovk: "".to_string(),
+        ak: "".to_string(),
+        nk: "".to_string(),
+        ivk: "".to_string(),
+        d: "".to_string(),
+        pk_d: "".to_string(),
+        payment_address: "".to_string()
+    };
+
+    let mut sk_bytes = [0u8; 32];
+    match hex::decode_to_slice(sk_str, &mut sk_bytes) {
+        Ok(()) => (),
+        Err(_) => return JsValue::NULL,
+    };
+
+    all_keys.sk = hex::encode(sk_bytes);
+
+    let expsk = ExpandedSpendingKey::from_spending_key(&sk_bytes);
+    all_keys.ask = hex::encode(expsk.ask.to_bytes());
+    all_keys.nsk = hex::encode(expsk.nsk.to_bytes());
+    all_keys.ovk = hex::encode(expsk.ovk.0);
+
+    let full_viewing_key = FullViewingKey::from_expanded_spending_key(&expsk);
+    all_keys.ak = hex::encode(full_viewing_key.vk.ak.to_bytes());
+    all_keys.nk = hex::encode(full_viewing_key.vk.nk.to_bytes());
+
+    let viewing_key = full_viewing_key.vk;
+
+    let ivk = viewing_key.ivk();
+    if ivk.is_none() {
+        return JsValue::NULL;
+    }
+
+    all_keys.ivk = hex::encode(ivk.unwrap().to_bytes());
+
+    loop {
+        let mut d_bytes = [0u8; 11];
+        rng.fill_bytes(&mut d_bytes);
+
+        let diversify = Diversifier(d_bytes);
+        let payment_address = diversify.to_payment_address(ivk.unwrap());
+
+        if payment_address.is_some() {
+            let address = payment_address.unwrap();
+            all_keys.d = hex::encode(d_bytes);
+            all_keys.pk_d = hex::encode(address.pk_d().to_bytes());
+            all_keys.payment_address = address.encode_payment_address();
+            break;
+        }
+    }
+
+    JsValue::from_serde(&all_keys).unwrap_or(JsValue::NULL)
+}
+
+#[wasm_bindgen]
+pub fn generate_keys_by_sk_d(sk_str: String, d_str: String) -> JsValue {
+    let mut all_keys = KeyList {
+        sk: "".to_string(),
+        ask: "".to_string(),
+        nsk: "".to_string(),
+        ovk: "".to_string(),
+        ak: "".to_string(),
+        nk: "".to_string(),
+        ivk: "".to_string(),
+        d: "".to_string(),
+        pk_d: "".to_string(),
+        payment_address: "".to_string()
+    };
+
+    let mut sk_bytes = [0u8; 32];
+    match hex::decode_to_slice(sk_str, &mut sk_bytes) {
+        Ok(()) => (),
+        Err(_) => return JsValue::NULL,
+    };
+
+    all_keys.sk = hex::encode(sk_bytes);
+
+    let expsk = ExpandedSpendingKey::from_spending_key(&sk_bytes);
+    all_keys.ask = hex::encode(expsk.ask.to_bytes());
+    all_keys.nsk = hex::encode(expsk.nsk.to_bytes());
+    all_keys.ovk = hex::encode(expsk.ovk.0);
+
+    let full_viewing_key = FullViewingKey::from_expanded_spending_key(&expsk);
+    all_keys.ak = hex::encode(full_viewing_key.vk.ak.to_bytes());
+    all_keys.nk = hex::encode(full_viewing_key.vk.nk.to_bytes());
+
+    let viewing_key = full_viewing_key.vk;
+
+    let ivk = viewing_key.ivk();
+    if ivk.is_none() {
+        return JsValue::NULL;
+    }
+
+    all_keys.ivk = hex::encode(ivk.unwrap().to_bytes());
+
+
+    let mut d_bytes = [0u8; 11];
+    match hex::decode_to_slice(d_str, &mut d_bytes) {
+        Ok(()) => (),
+        Err(_) => return JsValue::NULL,
+    };
+
+    let diversify = Diversifier(d_bytes);
+    let payment_address = diversify.to_payment_address(ivk.unwrap());
+
+    if payment_address.is_some() {
+        let address = payment_address.unwrap();
+        all_keys.d = hex::encode(d_bytes);
+        all_keys.pk_d = hex::encode(address.pk_d().to_bytes());
+        all_keys.payment_address = address.encode_payment_address();
+        JsValue::from_serde(&all_keys).unwrap_or(JsValue::NULL)
+    } else {
+        JsValue::NULL
+    }
 }

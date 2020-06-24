@@ -1,18 +1,18 @@
 [package]
-name = "redjubjub"
+name = "tronRedjubjub"
 edition = "2018"
 # When releasing to crates.io:
 # - Update html_root_url
 # - Update CHANGELOG.md
 # - Create git tag.
-version = "0.1.1"
+version = "1.0.0"
 authors = ["Henry de Valence <hdevalence@hdevalence.ca>"]
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ZcashFoundation/redjubjub"
-categories = ["cryptography", "zcash"]
-keywords = ["cryptography", "crypto", "jubjub", "redjubjub", "zcash"]
-description = "A mostly-standalone implementation of the RedJubjub signature scheme."
+categories = ["cryptography"]
+keywords = ["cryptography", "crypto", "jubjub", "redjubjub"]
+description = "A mostly-standalone implementation of the RedJubjub signature scheme and keys."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -24,11 +24,14 @@ features = ["nightly"]
 hex = "0.4"
 rand_core = "0.5"
 thiserror = "1.0"
+bech32 = "0.7"
 blake2b_simd = "0.5"
+blake2s_simd = "0.5"
 jubjub = "0.3"
 serde = { version = "1", optional = true, features = ["derive"] }
+serde_derive = "1"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
-wasm-bindgen = {version = "^0.2", features = ["nightly"]}
+wasm-bindgen = {version = "^0.2", features = ["nightly", "serde-serialize"]}
 
 [dev-dependencies]
 rand_chacha = "0.2"
