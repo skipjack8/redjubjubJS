@@ -1,5 +1,5 @@
 [package]
-name = "tronRedjubjub"
+name = "redjubjub-js"
 edition = "2018"
 # When releasing to crates.io:
 # - Update html_root_url

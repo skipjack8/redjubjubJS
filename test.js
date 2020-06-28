@@ -8,7 +8,7 @@ const {
     generate_keys,
     generate_keys_by_sk,
     generate_keys_by_sk_d
-} = require("./tronRedjubjub")
+} = require("./redjubjub-js")
 
 
 var msg = "3b78fee6e956f915ffe082284c5f18640edca9c57a5f227e5f7d7eb65ad61502"
