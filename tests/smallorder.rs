@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use jubjub::{AffinePoint, Fq};
 
-use redjubjub::*;
+use redjubjub_js::*;
 
 #[test]
 fn smallorder_publickey_fails() {

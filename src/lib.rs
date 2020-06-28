@@ -119,7 +119,7 @@ fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SecretKey<Spend
 
 // ask + alpha --> rk
 #[wasm_bindgen]
-pub fn generate_rk_from_ask(ask_string: String, alpha_string: String) -> String {
+pub fn generate_rk_by_ask(ask_string: String, alpha_string: String) -> String {
 
     let sk = match ask_to_rk(ask_string, alpha_string) {
         Ok(p) => p,
@@ -133,7 +133,7 @@ pub fn generate_rk_from_ask(ask_string: String, alpha_string: String) -> String 
 fn rk_test() {
     let ask = String::from("0100000000000000000000000000000000000000000000000000000000000000");
     let alpha = String::from("0100000000000000000000000000000000000000000000000000000000000000");
-    let rk = generate_rk_from_ask(ask, alpha);
+    let rk = generate_rk_by_ask(ask, alpha);
 
     println!("rk {}", rk);
 }
@@ -211,7 +211,7 @@ fn verify_auth_test() {
 }
 
 #[wasm_bindgen]
-pub fn generate_pk_from_sk(sk_string: String) -> String {
+pub fn generate_pk_by_sk(sk_string: String) -> String {
     let mut sk_bytes = [0u8;32];
     match hex::decode_to_slice(sk_string, &mut sk_bytes) {
         Ok(()) => (),
@@ -228,7 +228,7 @@ pub fn generate_pk_from_sk(sk_string: String) -> String {
 #[test]
 fn pk_test() {
     let sk = String::from("0100000000000000000000000000000000000000000000000000000000000000");
-    let pk = generate_pk_from_sk(sk);
+    let pk = generate_pk_by_sk(sk);
 
     println!("pk {}", pk);
 }
