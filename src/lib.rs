@@ -15,19 +15,18 @@ use wasm_bindgen::prelude::*;
 
 pub use error::Error;
 use hash::HStar;
-pub use public_key::{PublicKey, PublicKeyBytes};
-pub use secret_key::SecretKey;
+pub use signing_key::SigningKey;
+pub use verification_key::{VerificationKey, VerificationKeyBytes};
 pub use signature::Signature;
 pub use keys::*;
 use rand_core::RngCore;
 
-
 mod constants;
 mod error;
 mod hash;
-mod public_key;
-mod secret_key;
 mod signature;
+mod signing_key;
+mod verification_key;
 mod keys;
 mod group_hash;
 
@@ -55,22 +54,18 @@ pub trait SigType: private::Sealed {}
 /// A type variable corresponding to Zcash's `BindingSig`.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Binding {}
-
 impl SigType for Binding {}
 
 /// A type variable corresponding to Zcash's `SpendAuthSig`.
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum SpendAuth {}
-
 impl SigType for SpendAuth {}
 
 pub(crate) mod private {
     use super::*;
-
     pub trait Sealed: Copy + Clone + Eq + PartialEq + std::fmt::Debug {
         fn basepoint() -> jubjub::ExtendedPoint;
     }
-
     impl Sealed for Binding {
         fn basepoint() -> jubjub::ExtendedPoint {
             jubjub::AffinePoint::from_bytes(constants::BINDINGSIG_BASEPOINT_BYTES)
@@ -78,7 +73,6 @@ pub(crate) mod private {
                 .into()
         }
     }
-
     impl Sealed for SpendAuth {
         fn basepoint() -> jubjub::ExtendedPoint {
             jubjub::AffinePoint::from_bytes(constants::SPENDAUTHSIG_BASEPOINT_BYTES)
