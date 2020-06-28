@@ -82,32 +82,32 @@ pub(crate) mod private {
     }
 }
 
-fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SecretKey<SpendAuth>, Error> {
+fn ask_to_rk(ask_string: String, alpha_string: String) -> Result<SigningKey<SpendAuth>, Error> {
     let mut alpha_bytes = [0u8;32];
 
     match hex::decode_to_slice(alpha_string, &mut alpha_bytes) {
         Ok(()) => (),
-        Err(_) => return Err(Error::MalformedSecretKey),
+        Err(_) => return Err(Error::MalformedSigningKey),
     };
     let maybe_alpha = Scalar::from_bytes(&alpha_bytes);
     let alpha_scalar = {
         if maybe_alpha.is_some().into() {
             maybe_alpha.unwrap()
         } else {
-            return Err(Error::MalformedSecretKey);
+            return Err(Error::MalformedSigningKey);
         }
     };
 
     let mut ask_bytes = [0u8;32];
     match hex::decode_to_slice(ask_string, &mut ask_bytes) {
         Ok(()) => (),
-        Err(_) => return Err(Error::MalformedSecretKey),
+        Err(_) => return Err(Error::MalformedSigningKey),
     };
-    let sk = SecretKey::<SpendAuth>::try_from(ask_bytes);
+    let sk = SigningKey::<SpendAuth>::try_from(ask_bytes);
     if sk.is_ok() {
         Ok(sk.unwrap().randomize(&alpha_scalar))
     } else {
-        Err(Error::MalformedSecretKey)
+        Err(Error::MalformedSigningKey)
     }
 }
 
@@ -177,7 +177,7 @@ pub fn verify_spend_auth_sig(rk_string: String, message_hash_string: String, sig
         Ok(()) => (),
         Err(_) => return false,
     };
-    let pk = match PublicKey::<SpendAuth>::try_from(rk_bytes) {
+    let pk = match VerificationKey::<SpendAuth>::try_from(rk_bytes) {
         Ok(p) => p,
         Err(_) => return false,
     };
@@ -211,7 +211,7 @@ pub fn generate_pk_by_sk(sk_string: String) -> String {
         Ok(()) => (),
         Err(_) => return String::new(),
     };
-    let sk = match SecretKey::<Binding>::try_from(sk_bytes) {
+    let sk = match SigningKey::<Binding>::try_from(sk_bytes) {
         Ok(p) => p,
         Err(_) => return String::new(),
     };
@@ -234,7 +234,7 @@ pub fn generate_binding_sig(sk_string: String, message_hash_string: String) -> S
         Ok(()) => (),
         Err(_) => return String::new(),
     };
-    let sk = match SecretKey::<Binding>::try_from(sk_bytes) {
+    let sk = match SigningKey::<Binding>::try_from(sk_bytes) {
         Ok(p) => p,
         Err(_) => return String::new(),
     };
@@ -268,7 +268,7 @@ pub fn verify_binding_sig(pk_string: String, message_hash_string: String, signat
         Ok(()) => (),
         Err(_) => return false,
     };
-    let public_key = match PublicKey::<Binding>::try_from(pk_bytes) {
+    let public_key = match VerificationKey::<Binding>::try_from(pk_bytes) {
         Ok(p) => p,
         Err(_) => return false,
     };

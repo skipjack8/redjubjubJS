@@ -6,7 +6,7 @@ use jubjub::{AffinePoint, ExtendedPoint};
 use std::io::{self, Write};
 use std::convert::{TryInto};
 
-use crate::{constants, group_hash::group_hash, PublicKey, SpendAuth};
+use crate::{constants, group_hash::group_hash, VerificationKey, SpendAuth};
 
 type Scalar = jubjub::Fr;
 
@@ -110,7 +110,7 @@ impl FullViewingKey {
         let nk_basepoint: jubjub::ExtendedPoint = jubjub::AffinePoint::from_bytes(constants::NK_BASEPOINT_BYTES).unwrap().into();
         FullViewingKey {
             vk: ViewingKey {
-                ak: AffinePoint::from(PublicKey::<SpendAuth>::from_secret(&expsk.ask).point),
+                ak: AffinePoint::from(VerificationKey::<SpendAuth>::from(&expsk.ask).point),
                 nk: AffinePoint::from(&nk_basepoint * &expsk.nsk),
             },
             ovk: expsk.ovk,
