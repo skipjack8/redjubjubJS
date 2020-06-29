@@ -1,8 +1,60 @@
-A minimal [RedJubjub][redjubjub] implementation for keys and signature.
+A minimal RedJubjub implementation for keys and signature.
+# Build
 
-# Generate keys
+## Prerequisites 
+1. Install rust
 
-## generate_keys
+Run the following code in your terminal to download Rustup and install Rust.
+```
+# curl https://sh.rustup.rs -sSf | sh
+```
+After installation, run:
+```
+# source $HOME/.cargo/env
+```
+
+2. Install wasm-pack
+To build our library, we use `wasm-pack` to pack.
+
+```
+$ cargo install wasm-pack
+```
+
+3. Install Node with npm. In MacOS, you can run
+```
+# brew install node
+```
+In other OS, you can do as Nodejs site.
+
+## Pack
+
+1. Obtain the source code of project.
+
+2. In the root directory of this project, run
+
+```
+wasm-pack build --target nodejs --out-dir redjubjub-js
+```
+If you use this library in browser, run
+```
+wasm-pack build --target browser --out-dir redjubjub-js
+```
+`redjubjub-js` will be generated in root directory.
+
+3. In `redjubjub-js` directory, run
+
+```
+# npm pack
+```
+`redjubjub-js-1.0.0.tgz` will be generated in current directory. 
+
+You can install `redjubjub-js-1.0.0.tgz` with npm.
+
+# How to use
+
+## Generate keys
+
+### generate_keys
 
 This method is used for geneating keys and payment address randomly.
 
@@ -31,7 +83,7 @@ This method is used for geneating keys and payment address randomly.
 
 ```
 
-## generate_keys_by_sk
+### generate_keys_by_sk
 
 Generate keys and payment address by `sk`, and `d` is generated randomly.
 
@@ -59,7 +111,7 @@ Generate keys and payment address by `sk`, and `d` is generated randomly.
 
 ```
 
-## generate_keys_by_sk_d
+### generate_keys_by_sk_d
 
 Generate keys and payment address by `sk`, and `d`.
 
@@ -88,12 +140,12 @@ Generate keys and payment address by `sk`, and `d`.
 ```
 
 
-# Signature
+## Signature
 We also provide methods to sign and verify signature for spend authority signature and binding signature.
 
-## spend authority signature
+### spend authority signature
 
-### generate_rk_by_ask
+#### generate_rk_by_ask
 
 Generate public key `rk` by `ask` and  `alpha`.
 
@@ -106,7 +158,7 @@ function generate_rk_by_ask(ask, alpha)
 '10c702d6dff1509502ee5acc0b01d4b4531b2ff53b0dd54488aea6031b5e6d16'
 ``` 
 
-### generate_spend_auth_sig
+#### generate_spend_auth_sig
 
 Generate spend authority signature.
 
@@ -119,7 +171,7 @@ function generate_spend_auth_sig(ask, alpha, message_hash)
 '40386915d075844a6ea1bd80fd0b6c74bb4556ac0273cb2dd47b7b81eacfb83f3a69ac95cf63b98ad7e3120754cb1033656ce0b0eae9a1f0ace829c14005610a'
 ```
 
-### verify_spend_auth_sig
+#### verify_spend_auth_sig
 
 Verify spend authority signature.
 
@@ -132,9 +184,9 @@ function verify_spend_auth_sig(rk, message_hash, signature)
 true
 ```
 
-## binding signature
+### binding signature
 
-### generate_pk_by_sk
+#### generate_pk_by_sk
 
 Generate public key `pk` from private key `sk`.
 
@@ -147,7 +199,7 @@ function  generate_pk_by_sk(sk)
 '61a7134af4a6194592735dcda46c3119bdf547bc1e58bd60852cc88ba75f44a3'
 ```
 
-## generate_binding_sig
+### generate_binding_sig
 
 Generate binding signature
 
@@ -160,7 +212,7 @@ function  generate_binding_sig(sk, message_hash)
 'fea301d1f8c0ca3032cdfad36e64aaa27631419fdc84453d994beaa287408adf78e0478b8293eda3b3ba76f5c7efa302116fc577d18f354a5ff42ed25a655001'
 ```
 
-### verify_binding_sig
+#### verify_binding_sig
 
 ```JavaScript
 function  verify_binding_sig(pk, message_hash, signature)
