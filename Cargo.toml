@@ -34,7 +34,7 @@ rand = { version = "0.7", features = ["wasm-bindgen"] }
 wasm-bindgen = {version = "^0.2", features = ["nightly", "serde-serialize"]}
 
 [dev-dependencies]
-rand_chacha = "0.2"
+rand_chacha = "0.3"
 proptest = "0.10"
 lazy_static = "1.4"
 bincode = "1"
