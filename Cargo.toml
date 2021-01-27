@@ -27,7 +27,7 @@ thiserror = "1.0"
 bech32 = "0.7"
 blake2b_simd = "0.5"
 blake2s_simd = "0.5"
-jubjub = "0.3"
+jubjub = "0.6"
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_derive = "1"
 rand = { version = "0.7", features = ["wasm-bindgen"] }
