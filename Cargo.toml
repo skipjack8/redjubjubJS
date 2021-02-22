@@ -35,7 +35,7 @@ wasm-bindgen = {version = "^0.2", features = ["nightly", "serde-serialize"]}
 
 [dev-dependencies]
 rand_chacha = "0.2"
-proptest = "0.10"
+proptest = "1.0"
 lazy_static = "1.4"
 bincode = "1"
 
